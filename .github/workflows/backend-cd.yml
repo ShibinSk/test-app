@@ -18,7 +18,7 @@ env:
 
 jobs:
   deploy-multiple-containers:
-    runs-on: ${{ github.event.inputs.deployment_targets }}
+    runs-on: [self-hosted, app-server]  # Must match your runner label
     permissions:
       id-token: write
       contents: read
@@ -32,31 +32,26 @@ jobs:
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'false'
 
       - name: Pull Docker image
-        run: docker pull 776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{env.ECR_REPOSITORY}}:${{env.DOCKER_TAG}}
+        run: docker pull 776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
 
       - name: Deploy Container
+        run: |
+          container_name="test-app"
+          port=3000
 
-  run: |
-    container_name="test-app"
-    port=3000
+          echo "Deploying $container_name on port $port"
 
-    echo "Deploying $container_name on port $port"
+          if docker ps -a | grep -q $container_name; then
+            echo "Removing existing container $container_name"
+            docker rm -f $container_name
+          fi
 
-   
-    if docker ps -a | grep -q $container_name; then
-      echo "Removing existing container $container_name"
-      docker rm -f $container_name
-    fi
-
-   
-    docker run -d \
-      --restart unless-stopped \
-      -p $port:80 \
-      -v /home/ec2-user/projects/logs/:/app/logs/ \
-      --name $container_name \
-      --env-file ${{ env.ENV_FILE_PATH }} \
-      776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker run -d \
+            --restart unless-stopped \
+            -p $port:80 \
+            -v /home/ec2-user/projects/logs/:/app/logs/ \
+            --name $container_name \
+            --env-file ${{ env.ENV_FILE_PATH }} \
+            776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
