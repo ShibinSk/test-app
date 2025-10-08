@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - app-server
+          - backend-server
 
 env:
   AWS_REGION: eu-north-1
@@ -18,7 +18,7 @@ env:
 
 jobs:
   deploy-multiple-containers:
-    runs-on: [self-hosted, app-server]  # Must match your runner label
+    runs-on: [self-hosted, backend-server]  # Must match your runner label
     permissions:
       id-token: write
       contents: read
