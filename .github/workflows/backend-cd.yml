@@ -18,7 +18,7 @@ env:
 
 jobs:
   deploy-multiple-containers:
-    runs-on: ${{ github.event.inputs.deployment_targets }}
+    runs-on: backend-server
     permissions:
       id-token: write
       contents: read
