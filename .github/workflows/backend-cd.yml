@@ -18,7 +18,7 @@ env:
 
 jobs:
   deploy-multiple-containers:
-    runs-on: [self-hosted, backend-server]  # Must match your runner label
+    runs-on: ${{ github.event.inputs.deployment_targets }}
     permissions:
       id-token: write
       contents: read
