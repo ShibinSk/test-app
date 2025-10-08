@@ -1,0 +1,62 @@
+name: CD - test-app
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_targets:
+        description: 'Deployment target'
+        required: true
+        type: choice
+        options:
+          - app-server
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REPOSITORY: test-backend
+  ENV_FILE_PATH: /home/ec2-user/projects/.env
+  DOCKER_TAG: latest
+
+jobs:
+  deploy-multiple-containers:
+    runs-on: ${{ github.event.inputs.deployment_targets }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::776410619441:role/github-actions-cicd
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'false'
+
+      - name: Pull Docker image
+        run: docker pull 776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{env.ECR_REPOSITORY}}:${{env.DOCKER_TAG}}
+
+      - name: Deploy Container
+
+  run: |
+    container_name="test-app"
+    port=3000
+
+    echo "Deploying $container_name on port $port"
+
+   
+    if docker ps -a | grep -q $container_name; then
+      echo "Removing existing container $container_name"
+      docker rm -f $container_name
+    fi
+
+   
+    docker run -d \
+      --restart unless-stopped \
+      -p $port:80 \
+      -v /home/ec2-user/projects/logs/:/app/logs/ \
+      --name $container_name \
+      --env-file ${{ env.ENV_FILE_PATH }} \
+      776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
