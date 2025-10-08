@@ -13,8 +13,8 @@ app.set('port', PORT);
 var server = http.createServer(app);
 
 // Listen on provided port
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server started on http://0.0.0.0:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server started on http://localhost:${PORT}`);
 });
 
 // Optional: handle errors
