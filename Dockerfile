@@ -1,14 +1,16 @@
 FROM node:21-alpine3.17
-# RUN npm install pm2 -g
 
 WORKDIR /app
 
+# Set the port your app listens to
 EXPOSE 80
 
-COPY dist/* dist/
-COPY fonts/* fonts/
+# Copy built code
+COPY dist/ dist/
+COPY fonts/ fonts/
 
-RUN mkdir /app/logs
+# Create log folder
+RUN mkdir -p /app/logs
 
-# ENTRYPOINT ["sh", "-c", "node dist/server.js | tee -a /app/logs/server.log"]
-CMD [ "node", "dist/server.js" ]
+# Stream logs to stdout so docker logs shows output
+ENTRYPOINT ["sh", "-c", "node dist/server.js | tee -a /app/logs/server.log"]
