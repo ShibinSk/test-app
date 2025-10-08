@@ -75,7 +75,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/arm64 #,linux/amd64
+          platforms: linux/amd64
           push: true
           # tags: user/app:latest
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest #, $--{{ steps.login-ecr.outputs.registry }}/$--{{ env.ECR_REPOSITORY }}:$--{{ steps.increment-git-tag.outputs.git-tag }}
