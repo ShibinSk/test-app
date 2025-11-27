@@ -61,4 +61,3 @@ jobs:
             776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
 
       - name: Cleanup old images
-        run: docker system prune -$port
