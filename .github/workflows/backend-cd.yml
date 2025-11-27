@@ -59,5 +59,3 @@ jobs:
             --name $container_name \
             --env-file ${{ env.ENV_FILE_PATH }} \
             776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
-
-      - name: Cleanup old images
