@@ -43,7 +43,7 @@ jobs:
         run: |
           container_name="test-app"
           port=8003
-          internal_port=80   # change if your app runs on a different port
+          internal_port=3000   
 
           echo "Deploying $container_name on port $port"
 
@@ -61,4 +61,4 @@ jobs:
             776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
 
       - name: Cleanup old images
-        run: docker system prune -f
+        run: docker system prune -$port
