@@ -18,7 +18,7 @@ env:
 
 jobs:
   deploy-multiple-containers:
-    runs-on: backend-server
+    runs-on: [self-hosted, backend-server]
     permissions:
       id-token: write
       contents: read
@@ -36,22 +36,29 @@ jobs:
       - name: Pull Docker image
         run: docker pull 776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
 
+      - name: Prepare folders
+        run: mkdir -p /home/ec2-user/projects/logs/
+
       - name: Deploy Container
         run: |
           container_name="test-app"
-          port=3000
+          port=8003
+          internal_port=80   # change if your app runs on a different port
 
           echo "Deploying $container_name on port $port"
 
-          if docker ps -a | grep -q $container_name; then
+          if docker ps -a --format '{{.Names}}' | grep -wq $container_name; then
             echo "Removing existing container $container_name"
             docker rm -f $container_name
           fi
 
           docker run -d \
             --restart unless-stopped \
-            -p $port:80 \
+            -p $port:$internal_port \
             -v /home/ec2-user/projects/logs/:/app/logs/ \
             --name $container_name \
             --env-file ${{ env.ENV_FILE_PATH }} \
             776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
+
+      - name: Cleanup old images
+        run: docker system prune -f
