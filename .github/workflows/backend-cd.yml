@@ -15,47 +15,50 @@ env:
   ECR_REPOSITORY: test-backend
   ENV_FILE_PATH: /home/ec2-user/projects/.env
   DOCKER_TAG: latest
+  ECR_REGISTRY: 776410619441.dkr.ecr.eu-north-1.amazonaws.com
 
 jobs:
   deploy-multiple-containers:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
         with:
-          role-to-assume: arn:aws:iam::776410619441:role/github-actions-cicd
-          aws-region: ${{ env.AWS_REGION }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+            echo "Preparing folders"
+            mkdir -p /home/ec2-user/projects/logs/
 
-      - name: Pull Docker image
-        run: docker pull 776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
+            echo "Logging into ECR"
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
-      - name: Prepare folders
-        run: mkdir -p /home/ec2-user/projects/logs/
+            echo "Pulling Docker image"
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
 
-      - name: Deploy Container
-        run: |
-          container_name="test-app"
-          port=8003
-          internal_port=3000   
+            container_name="test-app"
+            port=8003
+            internal_port=3000
 
-          echo "Deploying $container_name on port $port"
+            echo "Deploying $container_name on port $port"
 
-          if docker ps -a --format '{{.Names}}' | grep -wq $container_name; then
-            echo "Removing existing container $container_name"
-            docker rm -f $container_name
-          fi
+            if docker ps -a --format '{{.Names}}' | grep -wq $container_name; then
+              echo "Removing existing container $container_name"
+              docker rm -f $container_name
+            fi
 
-          docker run -d \
-            --restart unless-stopped \
-            -p $port:$internal_port \
-            -v /home/ec2-user/projects/logs/:/app/logs/ \
-            --name $container_name \
-            --env-file ${{ env.ENV_FILE_PATH }} \
-            776410619441.dkr.ecr.eu-north-1.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
+            docker run -d \
+              --restart unless-stopped \
+              -p $port:$internal_port \
+              -v /home/ec2-user/projects/logs/:/app/logs/ \
+              --name $container_name \
+              --env-file ${{ env.ENV_FILE_PATH }} \
+              ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_TAG }}
+
+            echo "Cleaning up old images"
+            docker image prune -f
